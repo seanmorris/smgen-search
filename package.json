@@ -1,0 +1,7 @@
+{
+	"name": "smgen-search",
+	"author": "Sean Morris",
+	"main": "index.js",
+	"scripts": {},
+	"dependencies": {}
+}
