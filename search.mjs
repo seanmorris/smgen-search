@@ -2,16 +2,11 @@
 
 import fs from 'node:fs';
 import { BloomReader } from './Reader.mjs';
-import { hashWord, ngramsOf, prefixesOf } from './helpers.mjs';
+import { hashWord, ngramsOf, prefixesOf, skip, stripWords } from './helpers.mjs';
 
 const search = (corpus, query, minScore = 0) => {
 
-	const words = query
-		.toLowerCase()
-		.replace(/[-\/]/g, ' ')
-		.replace(/[^\w\s]/g, '')
-		.split(/\s/)
-		.filter(x => x !== '');
+	const words = stripWords(query);
 
 	if(!words.length) return [];
 
@@ -20,47 +15,37 @@ const search = (corpus, query, minScore = 0) => {
 
 	for(const doc of corpus)
 	{
-		const reader = BloomReader.fromJSON(doc.index);
+		const reader = BloomReader.fromBinary(doc.index);
 
 		if(reader.has(words.join(' ')))
 		{
-			found.set(doc, 10 + (found.get(doc) ?? 0));
+			found.set(doc, 10 * words.length + (found.get(doc) ?? 0));
 		}
 
 		const frag = 1 / words.length;
 
-		for(let i = 1; i < words.length; i++)
+		for(let i = 3; i <= 4; i += 1)
 		{
-			const ngrams = ngramsOf(i, words);
-
-			for(const ngram of ngrams)
+			for(const ngram of ngramsOf(i, words))
 			{
 				if(!reader.has(ngram)) continue;
 
-				found.set(doc, ngram.length / words.length + (found.get(doc) ?? 0));
+				found.set(doc, (ngram.length / words.length)**2 + (found.get(doc) ?? 0));
+
+				break;
 			}
 		}
 
-		for(let i = 1; i < 4; i++)
+		for(const word of words)
 		{
-			const ngrams = ngramsOf(i, hashedWords);
-
-			for(const ngram of ngrams)
+			for(const prefix of prefixesOf(word, 4))
 			{
-				if(!reader.has(ngram)) continue;
+				if(!reader.has(prefix)) continue;
+	
+				found.set(doc, (prefix.length / word.length)**2 * frag * 0.25 + (found.get(doc) ?? 0));
 
-				found.set(doc, 0.5 * ngram.length / hashedWords.length + (found.get(doc) ?? 0));
+				break;
 			}
-		}
-
-		const uniqueWords = [...new Set(words)];
-		const prefixes = [...new Set(uniqueWords.map(x => prefixesOf(x, 3)))].flat();
-
-		for(const word of prefixes)
-		{
-			if(!reader.has(word)) continue;
-
-			found.set(doc, frag * 0.25 + (found.get(doc) ?? 0));
 		}
 
 		for(const word of hashedWords)
@@ -78,13 +63,72 @@ const search = (corpus, query, minScore = 0) => {
 	return filtered;
 };
 
+const dec = new TextDecoder();
+
+const parseIndex = bin => {
+	const binView = new DataView(bin.buffer);
+	
+	let cur = 0;
+	
+	const fileHeader = dec.decode(bin.slice(0, 4));
+
+	if(fileHeader !== 'SRCH')
+	{
+		throw new Error('Invalid index file, no file header found.');
+	}
+
+	cur += 4;
+
+	const entries = [];
+
+	while(cur < bin.length)
+	{
+		const fileHeader = dec.decode(bin.slice(cur, cur + 4));
+
+		if(fileHeader === 'HCRS')
+		{
+			break;
+		}
+		else if(fileHeader !== 'SCHK')
+		{
+			throw new Error('Invalid index file, no chunk header found.');
+		}
+	
+		cur += 4;
+		
+		const titleLength = binView.getUint32(cur, true);
+		cur += 4;
+		
+		const title = dec.decode(bin.slice(cur, cur + titleLength));
+		cur += titleLength;
+
+		const pathLength = binView.getUint32(cur, true);
+		cur += 4;
+
+		const path = dec.decode(bin.slice(cur, cur + pathLength));
+		cur += pathLength;
+
+		const indexLength = binView.getUint32(cur, true);
+		cur += 4;
+
+		const index = bin.slice(cur, cur + indexLength);
+		cur += indexLength;
+
+		entries.push({title, path, index});
+	}
+
+	return entries;
+};
+
 const argv = process.argv.slice(2);
 
-const corpusJson = fs.readFileSync('search.json', {encoding: 'utf8'});
-const corpus = JSON.parse(corpusJson);
+// const corpusJson = fs.readFileSync('search.json', {encoding: 'utf8'});
+const corpusBin = fs.readFileSync('search.bin');
+
+// const corpus = JSON.parse(corpusJson);
+const corpus = parseIndex(corpusBin);
 
 console.time('Search');
-const results = search(corpus, argv.join(' '), 1.00);
+const results = search(corpus, argv.join(' '), 0.10);
 console.timeEnd('Search');
-
-console.log(results.map(r => [r[0].path, r[1]]));
+console.log(results.map(r => [r[0].path, r[1]]).slice(0, 10));

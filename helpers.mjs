@@ -1,3 +1,12 @@
+export const skip = ['', 'the', 'it', 'be', 'to', 'of', 'and', 'that', 'this', 'is', 'are', 'what', 'was'];
+
+export const stripWords = body =>
+	body.toLowerCase()
+		.replace(/[-_\.,;\/]/g, ' ')
+		.replace(/[^\w\s@]/g, '')
+		.split(/\s/)
+		.filter(x => !skip.includes(x));
+
 export const hashWord = word => [...new Set(word)].sort().join('');
 
 export const ngramsOf = (n, grams) => {
@@ -26,6 +35,8 @@ export const prefixesOf = (word, minLength = 0) => {
 		if(i < -1 + minLength) continue;
 		prefixes.push(word.substr(0, 1 + Number(i)));
 	}
+
+	prefixes.reverse();
 
 	return prefixes;
 };

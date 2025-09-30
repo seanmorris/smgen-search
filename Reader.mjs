@@ -12,10 +12,27 @@ export class BloomReader
 
 	static fromJSON(obj)
 	{
-		const bf = new this({ size: obj.m, hashes: obj.k });
-		bf.n = obj.n || 0;
-		bf.bits = this.b64ToU8(obj.bitsBase64);
-		return bf;
+		const reader = new this({ size: obj.m, hashes: obj.k });
+		reader.n = obj.n || 0;
+		reader.bits = this.b64ToU8(obj.bitsBase64);
+		return reader;
+	}
+
+	static fromBinary(buffer)
+	{
+		const bytes = new Uint8Array(buffer);
+		const view = new DataView(bytes.buffer);
+		
+		const m = view.getUint32(0 * 4, true);
+		const k = view.getUint32(1 * 4, true);
+		const n = view.getUint32(2 * 4, true);
+
+		const reader = new this({size: m, hashes: k});
+		
+		reader.n = n;
+		reader.bits = bytes.slice(3 * 4);
+
+		return reader;
 	}
 
 	has(value)

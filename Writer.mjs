@@ -54,12 +54,16 @@ export class BloomWriter extends BloomReader
 
 	toBinary()
 	{
-		return new Uint8Array([
-			this.m,
-			this.k,
-			this.n,
-			...this.bits,
-		]);
+		const bin = new Uint8Array(3 * 4 + this.bits.length);
+		const view = new DataView(bin.buffer);
+
+		view.setUint32(0 * 4, this.m, true);
+		view.setUint32(1 * 4, this.k, true);
+		view.setUint32(2 * 4, this.n, true);
+
+		bin.set(this.bits, 3 * 4);
+
+		return bin;
 	}
 
 	// ---------- internals ----------

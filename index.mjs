@@ -4,12 +4,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { BloomWriter } from './Writer.mjs';
-import { hashWord, ngramsOf, prefixesOf } from './helpers.mjs';
+import { hashWord, ngramsOf, prefixesOf, stripWords } from './helpers.mjs';
 
 const processDir = (dir, corpus = [], mapping = x => x) => {
 	for(const entry of fs.readdirSync(dir))
 	{
-		if(entry === '.fm.yaml') continue;
+		if(entry[0] === '.') continue;
 
 		const entryPath = path.join(dir, entry);
 
@@ -56,48 +56,74 @@ const mapping = entryPath => {
 		.replace(/\b[a-z]/g, letter => letter.toUpperCase())
 		.replace(/-/, ' '));
 
-	const strippedWords = body
-		.toLowerCase()
-		.replace(/[-_\.,;\/]/g, ' ')
-		.replace(/[^\w\s@]/g, '')
-		.split(/\s/)
-		.filter(x => x !== '');
+	console.error(title);
+
+	const strippedWords = stripWords(title + body);
 
 	const uniqueWords = [...new Set(strippedWords)];
 	const hashedWords = [...new Set(uniqueWords.map(hashWord))];
-	const prefixes    = [...new Set(uniqueWords.map(x => prefixesOf(x, 3)))].flat();
+	const prefixes    = [...new Set(uniqueWords.map(x => prefixesOf(x, 4)))].flat();
 
 	const ngrams = [];
 
-	for(let i = 2; i < 7; i++)
+	for(let i = 3; i <= 4; i += 1)
 	{
-		ngrams.push(...ngramsOf(i, strippedWords));
+		for(const ngram of ngramsOf(i, strippedWords))
+		{
+			ngrams.push(ngram);
+		}
 	}
 
-	const count = ngrams.length + prefixes.length + hashedWords.length;
-	const writer = BloomWriter.fromCapacity(count, 0.01);
+	const all = new Set([...ngrams, ...prefixes, ...hashedWords]);
+	const writer = BloomWriter.fromCapacity(all.size, 0.02);
 
-	ngrams.map(x => writer.add(x));
-	prefixes.map(x => writer.add(x));
-	hashedWords.map(x => writer.add(x));
+	all.forEach(x => writer.add(x));
 
-	// const binTitle = new enc.encode(title);
-	// const binPath  = enc.encode(path);
-	// const binIndex = writer.toBinary();
+	const binTitle = enc.encode(title);
+	const binPath  = enc.encode(entryPath.replace(/.md$/, ''));
+	const binIndex = writer.toBinary();
 
-	return {
-		title,
-		path: entryPath.replace(/.md$/, ''),
-		index: writer.toJSON(),
-		// ngrams,
-		// uniqueWords,
-		// prefixes,
-		// hashedWords,
-	};
+	const bytes = new Uint8Array(4 * 4 + binTitle.length + binPath.length + binIndex.length);
+	const view = new DataView(bytes.buffer);
+
+	bytes.set(enc.encode('SCHK'));
+	
+	view.setUint32(4, binTitle.length, true);
+	bytes.set(binTitle, 4 + 4 * 1 + 0);
+	
+	view.setUint32(4 + 4 * 1 + binTitle.length, binPath.length, true);
+	bytes.set(binPath, 4 + 4 * 2 + binTitle.length);
+
+	view.setUint32(4 + 4 * 2 + binTitle.length + binPath.length, binIndex.length, true);
+	bytes.set(binIndex, 4 + 4 * 3 + binTitle.length + binPath.length);
+
+	return bytes;
 }
 
 const argv = process.argv.slice(2);
 
 const corpus = [];
 processDir(argv[0] ?? process.env.PAGES_DIR, corpus, mapping);
-console.log(JSON.stringify(corpus));
+
+const { length: binLen } = corpus.reduce((p, c) => {
+	
+	return {length: p.length + c.length};
+
+}, {length: 0});
+
+const bin = new Uint8Array(8 + binLen);
+
+bin.set(enc.encode('SRCH'), 0);
+bin.set(enc.encode('HCRS'), binLen + 4);
+
+let cur = 4;
+
+for(const doc of corpus)
+{
+	bin.set(doc, cur);
+	cur += doc.length;
+}
+
+console.error( (bin.length / (1024 * 1024)) + ' MB' );
+
+process.stdout.write(bin);
