@@ -8,6 +8,7 @@ Zero-deps Node.js Bloom-filter–based full-text search and indexing for Markdow
 - Phrase matching, n-grams, prefixes, and fuzzy-word features
 - Custom binary index for fast loading
 - Zero runtime dependencies in JavaScript
+- Prebuild index files a fraction of the size of the corpus.
 
 ## Requirements
 
