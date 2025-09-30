@@ -84,9 +84,9 @@ Include `SearchReader.mjs` as an ES module (directly or via your bundler), then 
 
 ### `smgen-search build-index`
 
-Build the search index and store it in a file.
-
 *alias smgen bi*
+
+Build the search index and store it in a file.
 
 ```sh
 smgen-search build-index PAGES_DIR INDEX_FILE
@@ -99,13 +99,14 @@ smgen-search build-index PAGES_DIR INDEX_FILE
 
 ### `smgen-search search`
 
+*alias smgen s*
+
 Search the index and return the results.
 
 ```sh
 smgen-search search "search terms..."
 ```
 
-*alias smgen s*
 
 `INDEX_FILE` can be ALSO be provided as an environment variable here:
 
