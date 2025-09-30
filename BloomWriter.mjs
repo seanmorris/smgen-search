@@ -1,4 +1,4 @@
-import { BloomReader } from "./Reader.mjs";
+import { BloomReader } from "./BloomReader.mjs";
 
 export class BloomWriter extends BloomReader
 {

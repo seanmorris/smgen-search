@@ -5,11 +5,11 @@ Zero-deps Node.js Bloom-filter–based full-text search and indexing for Markdow
 ## Features
 
 - Approximate full-text search using Bloom filters
-- Phrase matching, n-grams, prefixes, and hashed-word features
+- Phrase matching, n-grams, prefixes, and fuzzy-word features
 - Custom binary index for fast loading
 - Zero runtime dependencies in JavaScript
 
-## Prerequisites
+## Requirements
 
 - Node.js (v14 or later)
 - [yq](https://github.com/mikefarah/yq) (for extracting YAML front-matter in the indexer)
@@ -17,13 +17,9 @@ Zero-deps Node.js Bloom-filter–based full-text search and indexing for Markdow
 ## Installation
 
 ```sh
-git clone <repo-url>
+git clone git@github.com:seanmorris/smgen-search.git
 cd smgen-search
-# Install dependencies (none are required, but this will set up the repo)
 npm install
-
-# Optionally install globally for easy access:
-npm install -g .
 ```
 
 ## Usage
@@ -33,13 +29,13 @@ npm install -g .
 Scan a directory of Markdown files and write the binary index to stdout:
 
 ```sh
-node index.mjs <path/to/markdown/dir> > search.bin
+node index.mjs <path/to/markdown/dir search.bin
 ```
 
 Or set the `PAGES_DIR` environment variable:
 
 ```sh
-PAGES_DIR=path/to/markdown node index.mjs > search.bin
+PAGES_DIR=path/to/markdown node index.mjs search.bin
 ```
 
 ### 2. Search the index

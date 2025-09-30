@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { BloomWriter } from '../Writer.mjs';
-import { BloomReader } from '../Reader.mjs';
+import { BloomWriter } from '../BloomWriter.mjs';
+import { BloomReader } from '../BloomReader.mjs';
 
 test('BloomWriter basic add and has', () => {
   const writer = BloomWriter.fromCapacity(100, 0.01);

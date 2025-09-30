@@ -3,10 +3,11 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { BloomWriter } from './Writer.mjs';
+import { BloomWriter } from './BloomWriter.mjs';
 import { hashWord, ngramsOf, prefixesOf, stripWords } from './helpers.mjs';
+import { SearchReader } from './SearchReader.mjs';
 
-const BLOOM_ERROR_RATE = Number(process.env.BLOOM_ERROR_RATE ?? 0.1);
+const BLOOM_ERROR_RATE = Number(process.env.BLOOM_ERROR_RATE ?? 0.08);
 
 const MIN_NGRAMS = 2;
 const MAX_NGRAMS = 3;
@@ -131,36 +132,69 @@ const processDocument = (docPath, contentBuffer) => {
 
 const argv = process.argv.slice(2);
 
-const inputDir = argv[0] ?? process.env.PAGES_DIR;
-const outputFile = argv[1] ?? './search.bin';
-
-const corpus  = iterateDir(inputDir, processDocument);
-
-let indexSize = 0, corpusSize = 0;
-
-for(const doc of corpus)
+switch(argv[0])
 {
-	corpusSize += doc.docSize;
-	indexSize += doc.indexSize;
+	case 'search':
+	case 's':
+		const indexBin =  process.env.INDEX_FILE ?? 'search.bin';
+		const searchReader = new SearchReader( fs.readFileSync(indexBin).buffer );
+
+		console.time('Search');
+		const results = searchReader.search(argv.slice(1).join(' '), 0.00);
+		console.timeEnd('Search');
+
+		results
+		.slice(0, 15)
+		.forEach(r => console.log( Number(r[1]).toFixed(3), r[0].path ) );
+
+		break;
+
+	case 'build-index':
+	case 'bi':
+		const inputDir   = argv[1] ?? process.env.PAGES_DIR;
+		const outputFile = argv[2] ?? './search.bin';
+
+		const corpus  = iterateDir(inputDir, processDocument);
+
+		let indexSize = 0, corpusSize = 0;
+
+		for(const doc of corpus)
+		{
+			corpusSize += doc.docSize;
+			indexSize  += doc.indexSize;
+		}
+
+		const bin = new Uint8Array(8 + indexSize);
+
+		bin.set(enc.encode('SRCH'), 0);
+		bin.set(enc.encode('HCRS'), indexSize + 4);
+
+		let cur = 4;
+
+		for(const doc of corpus)
+		{
+			bin.set(doc.index, cur);
+			cur += doc.indexSize;
+		}
+
+		console.error( 'Index Size:  ' + (indexSize  / (1024 ** 2)).toFixed(2) + ' MB' );
+		console.error( 'Corpus Size: ' + (corpusSize / (1024 ** 2)).toFixed(2) + ' MB' );
+		console.error( '             ' + (indexSize  / corpusSize ).toFixed(2) + ' Ratio' );
+
+		fs.writeFileSync(outputFile, bin)
+		break;
+
+	case 'help':
+	default:
+		console.log(`usage: smgen (build-index|search)
+
+commands:
+	build-index [ PAGES_DIR [ OUTPUT_FILE ] ]
+		PAGES_DIR   - Directory to scan for pages
+		OUTPUT_FILE - File to store the index.
+
+	search SEARCH TERMS...
+		Search the index
+`);
+		break;
 }
-
-const bin = new Uint8Array(8 + indexSize);
-
-bin.set(enc.encode('SRCH'), 0);
-bin.set(enc.encode('HCRS'), indexSize + 4);
-
-let cur = 4;
-
-for(const doc of corpus)
-{
-	bin.set(doc.index, cur);
-	cur += doc.indexSize;
-}
-
-console.error( 'Index Size:  ' + (indexSize  / (1024 ** 2)).toFixed(2) + ' MB' );
-console.error( 'Corpus Size: ' + (corpusSize / (1024 ** 2)).toFixed(2) + ' MB' );
-console.error( '             ' + (indexSize  / corpusSize ).toFixed(2) + ' Ratio' );
-
-fs.writeFileSync(outputFile, bin)
-
-// process.stdout.write(bin);

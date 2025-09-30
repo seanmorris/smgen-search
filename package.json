@@ -1,8 +1,20 @@
 {
 	"name": "smgen-search",
+	"version": "0.0.0",
 	"author": "Sean Morris",
-	"main": "index.js",
 	"scripts": {
 		"test": "node --test"
-	}
+	},
+	"bin": {
+		"smg-search": "./index.mjs"
+	},
+	"files": [
+		"BloomReader.mjs",
+		"BloomWriter.mjs",
+		"helpers.mjs",
+		"SearchReader.mjs",
+
+		"index.mjs",
+		"search.mjs"
+	]
 }

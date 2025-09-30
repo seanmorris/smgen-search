@@ -11,7 +11,7 @@ export const stripWords = body =>
 	.filter(x => !skip.includes(x))
 	.map(x => x.replace(suffixes, ''));
 
-export const hashWord = word => [...new Set(word.replace(/[aeiouy]/,''))].sort().join('');
+export const hashWord = word => [...new Set(word.replace(/[aeiouy]/gi,''))].sort().join('');
 
 export const ngramsOf = (n, grams) => {
 	const ngrams = [];

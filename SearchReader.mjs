@@ -1,4 +1,4 @@
-import { BloomReader } from './Reader.mjs';
+import { BloomReader } from './BloomReader.mjs';
 import { hashWord, ngramsOf, prefixesOf, stripWords } from './helpers.mjs';
 
 const MIN_NGRAMS = 2;
@@ -113,7 +113,7 @@ export class SearchReader
 			{
 				if(titleWords.includes(word))
 				{
-					found.set(doc, 0.5 + (found.get(doc) ?? 0));
+					found.set(doc, 1 + (found.get(doc) ?? 0));
 				}
 
 				if(reader.has(word))
@@ -143,12 +143,12 @@ export class SearchReader
 			{
 				if(hashedTitleWords.includes(word))
 				{
-					found.set(doc, 0.5 + (found.get(doc) ?? 0));
+					found.set(doc, 1.0 + (found.get(doc) ?? 0));
 				}
 
 				if(!reader.has(word)) continue;
 
-				found.set(doc, frag * 0.125 + (found.get(doc) ?? 0));
+				found.set(doc, frag * 0.5 + (found.get(doc) ?? 0));
 			}
 		}
 
