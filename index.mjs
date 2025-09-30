@@ -9,10 +9,11 @@ import { SearchReader } from './SearchReader.mjs';
 
 const BLOOM_ERROR_RATE = Number(process.env.BLOOM_ERROR_RATE ?? 0.08);
 
-const MIN_NGRAMS = 2;
-const MAX_NGRAMS = 3;
-const MIN_PREFIX = 3;
-const MAX_PREFIX = 5;
+const MIN_NGRAMS = Number(process.env.MIN_NGRAMS ?? 2);
+const MAX_NGRAMS = Number(process.env.MAX_NGRAMS ?? 3);
+
+const MIN_PREFIX = Number(process.env.MIN_PREFIX ?? 3);
+const MAX_PREFIX = Number(process.env.MIN_PREFIX ?? 5);
 
 const dec = new TextDecoder();
 const enc = new TextEncoder();
