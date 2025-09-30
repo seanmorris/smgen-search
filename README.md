@@ -109,6 +109,18 @@ smgen-search search "search terms..."
 
 `INDEX_FILE` can be ALSO be provided as an environment variable here:
 
+### Environment variables
+
+The following environment variables can be used to configure the program in CLI mode:
+
+- `INDEX_FILE`: path to index file (default search.bin)
+- `PAGES_DIR`: directory to scan for pages
+- `BLOOM_ERROR_RATE`: desired false-positive rate for Bloom filters (default: 0.08)
+- `MIN_NGRAMS`: minimum n-gram word length to index (default: 2)
+- `MAX_NGRAMS`: maximum n-gram word length to index (default: 3)
+- `MIN_PREFIX`: minimum prefix char length to index (default: 3)
+- `MAX_PREFIX`: maximum prefix char length to index (default: 5)
+
 ## Binary format
 
 The custom binary index format consists of:
