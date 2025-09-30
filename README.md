@@ -12,30 +12,22 @@ Zero-deps Node.js Bloom-filter–based full-text search and indexing for Markdow
 ## Requirements
 
 - Node.js (v14 or later)
-- [yq](https://github.com/mikefarah/yq) (for extracting YAML front-matter in the indexer)
+- [yq](https://github.com/mikefarah/yq) (for building indexes at development-time)
 
 ## Installation
 
 ```sh
-git clone git@github.com:seanmorris/smgen-search.git
-cd smgen-search
-npm install
+npm i -g smgen-search
 ```
 
 ## Usage
 
 ### 1. Build the index
 
-Scan a directory of Markdown files and write the binary index to stdout:
+Scan a directory of Markdown files and write the binary index `search.bin`:
 
 ```sh
-node index.mjs <path/to/markdown/dir search.bin
-```
-
-Or set the `PAGES_DIR` environment variable:
-
-```sh
-PAGES_DIR=path/to/markdown node index.mjs search.bin
+smgen-search build-index PAGES_DIR INDEX_FILE
 ```
 
 ### 2. Search the index
@@ -46,15 +38,51 @@ Run a query against the generated index:
 node search.mjs <search terms>
 ```
 
-Results are scored and filtered by a minimum threshold (0.10 by default). Adjust `minScore` in `search.mjs` to change filtering.
-
 ### 3. Example usage
 
-```sh
-node TinyBloom.mjs
+```bash
+smgen build-index path/to/markdown/files
+smgen search "Hello, world!"
+```
+```plain
+5.357 michael-yin.wagtail-whoosh
+3.299 springload.wagtailembedder
+3.250 treasure-data.pandas-td
+2.904 luckydonald.pytgbot
+2.904 nathancatania.ryurest
+2.857 harrislapiroff.wagtail-foliage
+2.799 astronouth7303.gpotato
+2.786 xtream1101.cutil
 ```
 
-The `TinyBloom.mjs` script demonstrates basic `BloomWriter`/`BloomReader` usage.
+## Commands
+
+### `smgen build-index`
+
+Build the search index and store it in a file.
+
+*alias smgen bi*
+
+```sh
+smgen-search build-index PAGES_DIR INDEX_FILE
+```
+
+* `PAGES_DIR` - Directory to scan for pages.
+* `INDEX_FILE` - File to store the index.
+
+`PAGES_DIR` & `INDEX_FILE` can be ALSO be provided as environment variables:
+
+### `smgen search`
+
+Search the index and return the results.
+
+```sh
+smgen-search search "search terms..."
+```
+
+*alias smgen s*
+
+`INDEX_FILE` can be ALSO be provided as an environment variable here:
 
 ## Binary format
 
@@ -70,5 +98,4 @@ The custom binary index format consists of:
 
 ## Development
 
-- No linting or test suite configured
 - Contributions and improvements are welcome

@@ -152,7 +152,7 @@ switch(argv[0])
 	case 'build-index':
 	case 'bi':
 		const inputDir   = argv[1] ?? process.env.PAGES_DIR;
-		const outputFile = argv[2] ?? './search.bin';
+		const outputFile = argv[2] ?? process.env.INDEX_FILE ?? './search.bin';
 
 		const corpus  = iterateDir(inputDir, processDocument);
 
@@ -185,16 +185,22 @@ switch(argv[0])
 		break;
 
 	case 'help':
+	case '--help':
+	case 'h':
+	case '-h':
 	default:
 		console.log(`usage: smgen (build-index|search)
 
 commands:
-	build-index [ PAGES_DIR [ OUTPUT_FILE ] ]
-		PAGES_DIR   - Directory to scan for pages
-		OUTPUT_FILE - File to store the index.
+    build-index [ PAGES_DIR [ OUTPUT_FILE ] ]
+        PAGES_DIR   - Directory to scan for pages
+        OUTPUT_FILE - File to store the index.
 
-	search SEARCH TERMS...
-		Search the index
+    search SEARCH TERMS...
+        Search the index
+
+    help
+        Print this help message and exit.
 `);
 		break;
 }
