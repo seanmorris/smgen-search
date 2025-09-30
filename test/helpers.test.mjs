@@ -8,7 +8,7 @@ test('stripWords removes punctuation, lowercases, and filters stop words', () =>
   assert.deepStrictEqual(stripWords(input), expected);
 });
 
-test('hashWord sorts unique letters', () => {
+test('hashWord sorts unique consonants', () => {
   assert.strictEqual(hashWord('banana'), 'bn');
   assert.strictEqual(hashWord(''), '');
   assert.strictEqual(hashWord('aabbcc'), 'bc');
