@@ -6,12 +6,12 @@ import { execFileSync } from 'node:child_process';
 import { BloomWriter } from './Writer.mjs';
 import { hashWord, ngramsOf, prefixesOf, stripWords } from './helpers.mjs';
 
-const BLOOM_ERROR_RATE = Number(process.env.BLOOM_ERROR_RATE ?? 0.05);
+const BLOOM_ERROR_RATE = Number(process.env.BLOOM_ERROR_RATE ?? 0.1);
 
 const MIN_NGRAMS = 2;
 const MAX_NGRAMS = 3;
 const MIN_PREFIX = 3;
-const MAX_PREFIX = 8;
+const MAX_PREFIX = 5;
 
 const dec = new TextDecoder();
 const enc = new TextEncoder();

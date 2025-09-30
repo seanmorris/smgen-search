@@ -4,7 +4,7 @@ import { stripWords, hashWord, ngramsOf, prefixesOf } from '../helpers.mjs';
 
 test('stripWords removes punctuation, lowercases, and filters stop words', () => {
   const input = 'Hello, world! This is a test of stripWords.';
-  const expected = ['hello', 'world', 'a', 'test', 'stripwords'];
+  const expected = ['hello', 'world', 'test', 'stripword'];
   assert.deepStrictEqual(stripWords(input), expected);
 });
 
@@ -22,5 +22,5 @@ test('ngramsOf returns contiguous n-grams', () => {
 
 test('prefixesOf returns prefixes down to minLength in descending order', () => {
   assert.deepStrictEqual(prefixesOf('hello', 1), ['hello', 'hell', 'hel', 'he', 'h']);
-  assert.strictEqual(prefixesOf('hi', 3), 'hi');
+  assert.deepStrictEqual(prefixesOf('hi', 3), ['hi']);
 });

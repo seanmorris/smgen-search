@@ -4,7 +4,7 @@ import { hashWord, ngramsOf, prefixesOf, stripWords } from './helpers.mjs';
 const MIN_NGRAMS = 2;
 const MAX_NGRAMS = 3;
 const MIN_PREFIX = 3;
-const MAX_PREFIX = 8;
+const MAX_PREFIX = 5;
 
 const dec = new TextDecoder();
 
@@ -93,10 +93,12 @@ export class SearchReader
 
 			const frag = 1 / words.length;
 			const titleWords = stripWords(doc.title);
+			const strippedTitle = titleWords.join(' ');
+			const hashedTitleWords = titleWords.map(hashWord);
 
 			for(const ngram of ngrams)
 			{
-				if(titleWords.indexOf(ngram) > -1)
+				if(strippedTitle.indexOf(ngram) > -1)
 				{
 					found.set(doc, 4 + (found.get(doc) ?? 0));
 				}
@@ -124,7 +126,7 @@ export class SearchReader
 
 				for(const prefix of prefixes)
 				{
-					if(titleWords.indexOf(prefix) > -1)
+					if(strippedTitle.indexOf(prefix) > -1)
 					{
 						found.set(doc, 0.25 + (found.get(doc) ?? 0));
 					}
@@ -139,6 +141,11 @@ export class SearchReader
 
 			for(const word of hashedWords)
 			{
+				if(hashedTitleWords.includes(word))
+				{
+					found.set(doc, 0.5 + (found.get(doc) ?? 0));
+				}
+
 				if(!reader.has(word)) continue;
 
 				found.set(doc, frag * 0.125 + (found.get(doc) ?? 0));

@@ -5,9 +5,9 @@ export const stripWords = body =>
 	.replace(/<[^>]*>/g, '')
 	.replace(/[-_\.,;\/]/g, ' ')
 	.replace(/[^\w\s@]/g, ' ')
-	.split(/\s/)
-	.map(x => x.replace('/s$/', ''))
-	.filter(x => !skip.includes(x));
+	.split(/\s+/)
+	.filter(x => !skip.includes(x))
+	.map(x => x.replace(/s$/, ''));
 
 export const hashWord = word => [...new Set(word.replace(/[aeiouy]/,''))].sort().join('');
 
