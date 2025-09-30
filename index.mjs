@@ -164,12 +164,19 @@ switch(argv[0])
 			indexSize  += doc.indexSize;
 		}
 
-		const bin = new Uint8Array(8 + indexSize);
+		const bin = new Uint8Array(24 + indexSize);
+		const binView = new DataView(bin.buffer);
+
+		binView.setUint32(1 * 4, MIN_NGRAMS, true);
+		binView.setUint32(2 * 4, MAX_NGRAMS, true);
+
+		binView.setUint32(3 * 4, MIN_PREFIX, true);
+		binView.setUint32(4 * 4, MAX_PREFIX, true);
 
 		bin.set(enc.encode('SRCH'), 0);
-		bin.set(enc.encode('HCRS'), indexSize + 4);
+		bin.set(enc.encode('HCRS'), indexSize + 20);
 
-		let cur = 4;
+		let cur = 4 * 5;
 
 		for(const doc of corpus)
 		{

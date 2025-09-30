@@ -55,6 +55,31 @@ smgen search "Hello, world!"
 2.786 xtream1101.cutil
 ```
 
+### 4. Browser (web) usage
+
+You can also perform searches directly in a web page by serving the generated `search.bin` as a static asset.
+Include `SearchReader.mjs` as an ES module (directly or via your bundler), then load and query the index:
+
+```html
+<script type="module">
+  import { SearchReader } from './SearchReader.mjs';
+
+  async function initSearch() {
+    // Fetch the binary index from your static asset server
+    const resp = await fetch('/search.bin');
+    const buffer = await resp.arrayBuffer();
+    const reader = new SearchReader(buffer);
+
+    // Perform a search (threshold parameter is optional)
+    const results = reader.search('your search terms here', 0.00);
+    // Output top 10 results
+    console.log(results.slice(0, 10));
+  }
+
+  initSearch().catch(console.error);
+</script>
+```
+
 ## Commands
 
 ### `smgen build-index`
@@ -89,6 +114,10 @@ smgen-search search "search terms..."
 The custom binary index format consists of:
 
 - A 4-byte file header: `SRCH`
+- 4-byte little-endian MIN_NGRAMS
+- 4-byte little-endian MAX_NGRAMS
+- 4-byte little-endian MIN_PREFIX
+- 4-byte little-endian MAX_PREFIX
 - For each document chunk:
   - A 4-byte chunk header: `SCHK`
   - 4-byte little-endian title length, followed by the title UTF-8 bytes

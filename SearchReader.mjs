@@ -1,11 +1,6 @@
 import { BloomReader } from './BloomReader.mjs';
 import { hashWord, ngramsOf, prefixesOf, stripWords } from './helpers.mjs';
 
-const MIN_NGRAMS = 2;
-const MAX_NGRAMS = 3;
-const MIN_PREFIX = 3;
-const MAX_PREFIX = 5;
-
 const dec = new TextDecoder();
 
 export class SearchReader
@@ -13,6 +8,12 @@ export class SearchReader
 	constructor(corpusBuffer)
 	{
 		this.corpus = this.parseCorpus(corpusBuffer);
+
+		this.minNgrams = 2;
+		this.maxNgrams = 3;
+
+		this.minPrefix = 3;
+		this.maxPrefix = 5;
 	}
 
 	parseCorpus(corpusBuffer)
@@ -21,7 +22,7 @@ export class SearchReader
 
 		let cur = 0;
 
-		const fileHeader = dec.decode(corpusBuffer.slice(cur, 4));
+		const fileHeader = dec.decode(corpusBuffer.slice(cur, cur + 4));
 
 		if(fileHeader !== 'SRCH')
 		{
@@ -29,6 +30,14 @@ export class SearchReader
 		}
 
 		cur += 4;
+
+		this.minNgrams = binView.getUint32(1 * 4, true);
+		this.maxNgrams = binView.getUint32(2 * 4, true);
+
+		this.minPrefix = binView.getUint32(3 * 4, true);
+		this.maxPrefix = binView.getUint32(4 * 4, true);
+
+		cur += 4 * 4;
 
 		const entries = [];
 
@@ -82,7 +91,7 @@ export class SearchReader
 
 		const ngrams = [];
 
-		for(let i = MIN_NGRAMS; i <= MAX_NGRAMS; i += 1)
+		for(let i = this.minNgrams; i <= this.maxNgrams; i += 1)
 		{
 			ngrams.push(...ngramsOf(i, words));
 		}
@@ -122,7 +131,7 @@ export class SearchReader
 					continue;
 				}
 
-				const prefixes = prefixesOf(word, MIN_PREFIX, MAX_PREFIX);
+				const prefixes = prefixesOf(word, this.minNgrams, this.maxNgrams);
 
 				for(const prefix of prefixes)
 				{
