@@ -41,17 +41,17 @@ export class BloomReader
 		for (let i = 0; i < this.k; i++)
 		{
 			const idx = (h1 + i * h2) % this.m;
-			if (!this.getBit(idx)) return false;   // definitely not present
+			if (!this.getBit(idx)) return false; // definitely not present
 		}
-		return true;                               // possibly present
+		return true; // possibly present
 	}
 
 	// Double hashing: h_i = (h1 + i*h2) mod m
 	doubleHashSeeds(str)
 	{
-		const h1 = this.fnv1a32(str);
+		const h1 = this.fnv1a32(str) >>> 0;
 		// Make h2 odd & non-zero (better cycle through bit array)
-		let h2 = this.xorshift32(str) | 1;
+		let h2 = (this.xorshift32(str) | 1) >>> 0;
 		if (h2 === 0) h2 = 1;
 		// Keep within 32-bit unsigned range
 		return [h1 % this.m, h2 % this.m];

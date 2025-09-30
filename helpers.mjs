@@ -1,13 +1,14 @@
-export const skip = ['', 'the', 'it', 'be', 'to', 'of', 'and', 'that', 'this', 'is', 'are', 'what', 'was'];
+export const skip = ['', 'the', 'a', 'it', 'be', 'to', 'of', 'and', 'that', 'this', 'is', 'are', 'what', 'was', 'do', 'for'];
 
 export const stripWords = body =>
 	body.toLowerCase()
+		.replace(/<[^>]*>/g, '')
 		.replace(/[-_\.,;\/]/g, ' ')
-		.replace(/[^\w\s@]/g, '')
+		.replace(/[^\w\s@]/g, ' ')
 		.split(/\s/)
 		.filter(x => !skip.includes(x));
 
-export const hashWord = word => [...new Set(word)].sort().join('');
+export const hashWord = word => [...new Set(word.replace(/[aeiouy]/,''))].sort().join('');
 
 export const ngramsOf = (n, grams) => {
 	const ngrams = [];
@@ -27,7 +28,7 @@ export const prefixesOf = (word, minLength = 0) => {
 
 	if(word.length < minLength)
 	{
-		return word;
+		return [word];
 	}
 
 	for(const i in word)
