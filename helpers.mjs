@@ -1,5 +1,7 @@
 export const skip = ['', 'the', 'a', 'it', 'be', 'to', 'of', 'and', 'that', 'this', 'is', 'are', 'what', 'was', 'do', 'for'];
 
+const suffixes = /(s|es|ment|ness|acy|dom|ce|ge|en|er|ship|sion|tion|ity|ic|ical|al|ize|ise)$/;
+
 export const stripWords = body =>
 	body.toLowerCase()
 	.replace(/<[^>]*>/g, '')
@@ -7,7 +9,7 @@ export const stripWords = body =>
 	.replace(/[^\w\s@]/g, ' ')
 	.split(/\s+/)
 	.filter(x => !skip.includes(x))
-	.map(x => x.replace(/s$/, ''));
+	.map(x => x.replace(suffixes, ''));
 
 export const hashWord = word => [...new Set(word.replace(/[aeiouy]/,''))].sort().join('');
 
