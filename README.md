@@ -113,17 +113,18 @@ smgen-search search "search terms..."
 
 The custom binary index format consists of:
 
-- A 4-byte file header: `SRCH`
-- 4-byte little-endian MIN_NGRAMS
-- 4-byte little-endian MAX_NGRAMS
-- 4-byte little-endian MIN_PREFIX
-- 4-byte little-endian MAX_PREFIX
-- For each document chunk:
-  - A 4-byte chunk header: `SCHK`
-  - 4-byte little-endian title length, followed by the title UTF-8 bytes
-  - 4-byte little-endian path length, followed by the path UTF-8 bytes
-  - 4-byte little-endian filter length, followed by the raw filter bits
-- A 4-byte trailer: `HCRS`
+- File header (4 bytes): ASCII `SRCH`
+- Four 4-byte little-endian integers, in order:
+  - `MIN_NGRAMS`
+  - `MAX_NGRAMS`
+  - `MIN_PREFIX`
+  - `MAX_PREFIX`
+- One or more document chunks, each:
+  - 4 bytes: chunk header ASCII `SCHK`
+  - 4 bytes (LE): title length, followed by the title UTF-8 bytes
+  - 4 bytes (LE): path length, followed by the path UTF-8 bytes (no `.md`)
+  - 4 bytes (LE): filter length, followed by the raw Bloom filter bits
+- File trailer (4 bytes): ASCII `HCRS`
 
 ## Development
 

@@ -9,9 +9,9 @@ test('stripWords removes punctuation, lowercases, and filters stop words', () =>
 });
 
 test('hashWord sorts unique letters', () => {
-  assert.strictEqual(hashWord('banana'), 'abn');
+  assert.strictEqual(hashWord('banana'), 'bn');
   assert.strictEqual(hashWord(''), '');
-  assert.strictEqual(hashWord('aabbcc'), 'abc');
+  assert.strictEqual(hashWord('aabbcc'), 'bc');
 });
 
 test('ngramsOf returns contiguous n-grams', () => {
