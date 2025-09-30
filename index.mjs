@@ -6,39 +6,45 @@ import { execFileSync } from 'node:child_process';
 import { BloomWriter } from './Writer.mjs';
 import { hashWord, ngramsOf, prefixesOf, stripWords } from './helpers.mjs';
 
-const BLOOM_ERROR_RATE = Number(process.env.BLOOM_ERROR_RATE ?? 0.01);
+const BLOOM_ERROR_RATE = Number(process.env.BLOOM_ERROR_RATE ?? 0.05);
 
-const MIN_NGRAMS = 3;
-const MAX_NGRAMS = 4;
-const MIN_PREFIX = 5;
+const MIN_NGRAMS = 2;
+const MAX_NGRAMS = 3;
+const MIN_PREFIX = 3;
+const MAX_PREFIX = 8;
 
 const dec = new TextDecoder();
 const enc = new TextEncoder();
 
-const iterateDir = (dir, processDocument = x => x) => {
+const iterateDir = (dir, processDocument = x => x, rootDir = null) => {
 	const corpus = [];
+
+	dir = path.resolve(dir);
+	rootDir = rootDir ?? dir;
 
 	for(const entry of fs.readdirSync(dir))
 	{
 		if(entry[0] === '.') continue;
 
-		const entryPath = path.join(dir, entry);
+		const filepath = path.join(dir, entry);
 
-		if(fs.lstatSync(entryPath).isDirectory())
+		if(fs.lstatSync(filepath).isDirectory())
 		{
-			corpus.push( ...iterateDir(entryPath, processDocument) );
+			corpus.push( ...iterateDir(filepath, processDocument, rootDir) );
 		}
 		else
 		{
-			corpus.push( processDocument(entryPath) );
+			const contentBuffer = fs.readFileSync(filepath);
+			const docPath = filepath.substr(rootDir.length + 1);
+
+			corpus.push( processDocument(docPath, contentBuffer) );
 		}
 	}
 
 	return corpus;
 };
 
-const processDocument = entryPath => {
-	const contentBuffer = fs.readFileSync(entryPath);
+const processDocument = (docPath, contentBuffer) => {
 	const content = dec.decode(contentBuffer);
 
 	const docSize = contentBuffer.length;
@@ -53,7 +59,7 @@ const processDocument = entryPath => {
 
 		const json = execFileSync(
 			'yq',
-			['--front-matter=extract', '-o=json', entryPath],
+			['--front-matter=extract', '-o=json', docPath],
 			{encoding: 'utf8'},
 		);
 
@@ -64,18 +70,18 @@ const processDocument = entryPath => {
 		console.error(error);
 	}
 
-	const entry = path.basename(entryPath);
+	const entry = path.basename(docPath);
 
 	const title = frontmatter.title ?? (entry.toLowerCase()
-		.replace(/.md$/, '')
-		.replace(/\b[a-z]/g, letter => letter.toUpperCase())
-		.replace(/-/, ' '));
+	.replace(/.md$/, '')
+	.replace(/\b[a-z]/g, letter => letter.toUpperCase())
+	.replace(/-/, ' '));
 
 	const strippedWords = stripWords(title + body);
 
 	const uniqueWords = [...new Set(strippedWords)];
 	const hashedWords = [...new Set(uniqueWords.map(hashWord))];
-	const prefixes    = [...new Set(uniqueWords.map(x => prefixesOf(x, MIN_PREFIX)))].flat();
+	const prefixes    = [...new Set(uniqueWords.map(x => prefixesOf(x, MIN_PREFIX, MAX_PREFIX)))].flat();
 
 	const ngrams = [];
 
@@ -93,7 +99,7 @@ const processDocument = entryPath => {
 	all.forEach( x => writer.add(x) );
 
 	const binTitle = enc.encode(title);
-	const binPath  = enc.encode(entryPath.replace(/.md$/, ''));
+	const binPath  = enc.encode(docPath.replace(/.md$/, ''));
 	const binIndex = writer.toBinary();
 
 	const indexSize = 4 * 4 + binTitle.length + binPath.length + binIndex.length;
@@ -112,19 +118,23 @@ const processDocument = entryPath => {
 	view.setUint32(4 + 4 * 2 + binTitle.length + binPath.length, binIndex.length, true);
 	bytes.set(binIndex, 4 + 4 * 3 + binTitle.length + binPath.length);
 
-	console.error((bytes.length / docSize) + '\t' + title);
+	console.error((bytes.length / docSize).toFixed(2) + '\t' + docPath);
 
 	return {
 		title,
-		path: entryPath,
+		path: docPath,
 		index: bytes,
 		docSize,
 		indexSize,
 	};
 };
 
-const argv    = process.argv.slice(2);
-const corpus  = iterateDir(argv[0] ?? process.env.PAGES_DIR, processDocument);
+const argv = process.argv.slice(2);
+
+const inputDir = argv[0] ?? process.env.PAGES_DIR;
+const outputFile = argv[1] ?? './search.bin';
+
+const corpus  = iterateDir(inputDir, processDocument);
 
 let indexSize = 0, corpusSize = 0;
 
@@ -147,8 +157,10 @@ for(const doc of corpus)
 	cur += doc.indexSize;
 }
 
-console.error( 'Index Size:  ' + (Math.round( indexSize  / (1024 ** 2) * 100 ) / 100) + ' MB' );
-console.error( 'Corpus Size: ' + (Math.round( corpusSize / (1024 ** 2) * 100 ) / 100) + ' MB' );
-console.error( '             ' + (Math.round( indexSize  / corpusSize * 100 ) / 100) + ' Ratio' );
+console.error( 'Index Size:  ' + (indexSize  / (1024 ** 2)).toFixed(2) + ' MB' );
+console.error( 'Corpus Size: ' + (corpusSize / (1024 ** 2)).toFixed(2) + ' MB' );
+console.error( '             ' + (indexSize  / corpusSize ).toFixed(2) + ' Ratio' );
 
-process.stdout.write(bin);
+fs.writeFileSync(outputFile, bin)
+
+// process.stdout.write(bin);
