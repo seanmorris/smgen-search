@@ -37,39 +37,49 @@ const iterateDir = (dir, processDocument = x => x, rootDir = null) => {
 		else
 		{
 			const contentBuffer = fs.readFileSync(filepath);
+			const content = dec.decode(contentBuffer);
 			const docPath = filepath.substr(rootDir.length + 1);
 
-			corpus.push( processDocument(docPath, contentBuffer) );
+			const frontmatter = {};
+
+			if(content.substr(0, 4) === '---\n') try
+			{
+				const json = execFileSync(
+					'yq',
+					['--front-matter=extract', '-o=json', filepath],
+					{encoding: 'utf8'},
+				);
+
+				Object.assign(frontmatter, JSON.parse(json) ?? {});
+			}
+			catch(error)
+			{
+				console.error(error);
+			}
+
+			if(frontmatter.noSearch ?? false)
+			{
+				continue;
+			}
+
+			corpus.push( processDocument(docPath, frontmatter, contentBuffer) );
 		}
 	}
 
 	return corpus;
 };
 
-const processDocument = (docPath, contentBuffer) => {
+const processDocument = (docPath, frontmatter, contentBuffer) => {
 	const content = dec.decode(contentBuffer);
 
 	const docSize = contentBuffer.length;
 
-	const frontmatter = {};
 	let body = content;
 
-	if(content.substr(0, 4) === '---\n') try
+	if(content.substr(0, 4) === '---\n')
 	{
 		const start = 5 + content.indexOf('\n---\n');
 		body = content.substr(start);
-
-		const json = execFileSync(
-			'yq',
-			['--front-matter=extract', '-o=json', docPath],
-			{encoding: 'utf8'},
-		);
-
-		Object.assign(frontmatter, JSON.parse(json) ?? {});
-	}
-	catch(error)
-	{
-		console.error(error);
 	}
 
 	const entry = path.basename(docPath);
