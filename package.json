@@ -1,20 +1,53 @@
 {
-	"name": "smgen-search",
-	"version": "0.0.1",
-	"author": "Sean Morris",
-	"scripts": {
-		"test": "node --test"
-	},
-	"bin": {
-		"smgen-search": "./index.mjs"
-	},
-	"files": [
-		"BloomReader.mjs",
-		"BloomWriter.mjs",
-		"helpers.mjs",
-		"SearchReader.mjs",
-
-		"index.mjs",
-		"search.mjs"
-	]
+  "name": "smgen-search",
+  "version": "0.1.0",
+  "description": "Build and query compact static search indexes for Markdown sites.",
+  "keywords": [
+    "smgen",
+    "search",
+    "static-site",
+    "markdown",
+    "bloom-filter"
+  ],
+  "license": "Apache-2.0",
+  "author": "Sean Morris",
+  "homepage": "https://github.com/seanmorris/smgen-search#readme",
+  "bugs": "https://github.com/seanmorris/smgen-search/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seanmorris/smgen-search.git"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "smgen-search": "./index.mjs"
+  },
+  "exports": {
+    ".": "./search.mjs",
+    "./reader": "./SearchReader.mjs",
+    "./bloom-reader": "./BloomReader.mjs",
+    "./bloom-writer": "./BloomWriter.mjs",
+    "./helpers": "./helpers.mjs"
+  },
+  "files": [
+    "BloomReader.mjs",
+    "BloomWriter.mjs",
+    "helpers.mjs",
+    "SearchReader.mjs",
+    "index.mjs",
+    "search.mjs",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "check": "npm test && npm pack --dry-run --ignore-scripts",
+    "prepack": "npm run check"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

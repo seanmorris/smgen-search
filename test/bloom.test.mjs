@@ -31,3 +31,24 @@ test('Bloom binary roundtrip via BloomReader', () => {
   assert.strictEqual(reader.has('z'), true);
   assert.strictEqual(reader.has('w'), false);
 });
+
+test('BloomReader preserves typed-array byte boundaries', () => {
+  const writer = BloomWriter.fromCapacity(20, 0.1);
+  writer.add('bounded');
+  const binary = writer.toBinary();
+  const backing = new Uint8Array(binary.length + 11);
+  backing.fill(255);
+  backing.set(binary, 7);
+
+  const reader = BloomReader.fromBinary(backing.subarray(7, 7 + binary.length));
+  assert.strictEqual(reader.has('bounded'), true);
+  assert.strictEqual(reader.has('missing'), false);
+});
+
+test('BloomReader rejects truncated and inconsistent binary data', () => {
+  assert.throws(() => BloomReader.fromBinary(new Uint8Array(12)), /12-byte header/u);
+
+  const writer = BloomWriter.fromCapacity(20, 0.1);
+  const binary = writer.toBinary();
+  assert.throws(() => BloomReader.fromBinary(binary.subarray(0, -1)), /bit length/u);
+});

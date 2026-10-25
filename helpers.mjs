@@ -1,47 +1,82 @@
+/** Common words omitted from the search feature set. */
 export const skip = ['', 'the', 'a', 'it', 'be', 'to', 'of', 'and', 'that', 'this', 'is', 'are', 'what', 'was', 'do', 'for'];
 
-const suffixes = /(s|es|ment|ness|acy|dom|ce|ge|en|er|ship|sion|tion|ity|ic|ical|al|ize|ise)$/;
+const suffixes = /(s|es|ment|ness|acy|dom|ce|ge|en|er|ship|sion|tion|ity|ic|ical|al|ize|ise)$/u;
 
-export const stripWords = body =>
-	body.toLowerCase()
-	.replace(/<[^>]*>/g, '')
-	.replace(/[-_\.,;\/]/g, ' ')
-	.replace(/[^\w\s@]/g, ' ')
-	.split(/\s+/)
-	.filter(x => !skip.includes(x))
-	.map(x => x.replace(suffixes, ''));
+/**
+ * Normalize prose into searchable word stems.
+ *
+ * @param {string} body Source prose or Markdown.
+ * @returns {string[]} Normalized words in source order.
+ */
+export function stripWords(body)
+{
+	return body.toLowerCase()
+		.replace(/<[^>]*>/gu, '')
+		.replace(/[-_\.,;/]/gu, ' ')
+		.replace(/[^\w\s@]/gu, ' ')
+		.split(/\s+/u)
+		.filter(word => !skip.includes(word))
+		.map(word => word.replace(suffixes, ''))
+		.filter(Boolean);
+}
 
-export const hashWord = word => [...new Set(word.replace(/[aeiouy]/gi,''))].sort().join('');
+/**
+ * Reduce a word to its sorted set of consonants for fuzzy matching.
+ *
+ * @param {string} word Word to reduce.
+ * @returns {string} Stable consonant signature.
+ */
+export function hashWord(word)
+{
+	return [...new Set(word.replace(/[aeiouy]/giu, ''))].sort().join('');
+}
 
-export const ngramsOf = (n, grams) => {
-	const ngrams = [];
-
-	for(const i in grams)
+/**
+ * Produce contiguous word phrases of one size.
+ *
+ * @param {number} size Number of words in each phrase.
+ * @param {string[]} words Normalized words.
+ * @returns {string[]} Contiguous phrases.
+ */
+export function ngramsOf(size, words)
+{
+	if(!Number.isInteger(size) || size <= 0 || words.length < size)
 	{
-		const ii = Number(i);
-		if(grams.length < n + ii) break;
-		ngrams.push( grams.slice(ii, n + ii).join(' ') );
+		return [];
+	}
+
+	const ngrams = [];
+	for(let index = 0; index <= words.length - size; index++)
+	{
+		ngrams.push(words.slice(index, index + size).join(' '));
 	}
 
 	return ngrams;
-};
+}
 
-export const prefixesOf = (word, minLength = 0, maxLength = Infinity) => {
-	const prefixes = [];
-
+/**
+ * Produce the indexed prefixes of a word, longest first.
+ *
+ * @param {string} word Word to split.
+ * @param {number} [minLength] Shortest indexed prefix.
+ * @param {number} [maxLength] Longest indexed prefix.
+ * @returns {string[]} Prefixes in descending length order.
+ */
+export function prefixesOf(word, minLength = 0, maxLength = Infinity)
+{
 	if(word.length < minLength)
 	{
 		return [word];
 	}
 
-	for(const i in word)
+	const upper = Math.min(word.length, maxLength);
+	const lower = Math.max(1, minLength);
+	const prefixes = [];
+	for(let length = upper; length >= lower; length--)
 	{
-		if(i > -1 + maxLength) break;
-		if(i < -1 + minLength) continue;
-		prefixes.push(word.substr(0, 1 + Number(i)));
+		prefixes.push(word.slice(0, length));
 	}
 
-	prefixes.reverse();
-
 	return prefixes;
-};
+}

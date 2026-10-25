@@ -1,145 +1,122 @@
 # smgen-search
 
-Zero-deps Node.js Bloom-filter–based full-text search and indexing for Markdown files.
+smgen-search builds a compact search index from Markdown and queries it in
+Node.js or a browser. SMGen uses the command to add static search without a
+server-side search service.
 
-## Features
+The package has no runtime dependencies. Building an index requires Node.js 20
+or newer and [yq](https://github.com/mikefarah/yq) 4. Querying an existing index
+only requires JavaScript.
 
-- Approximate full-text search using Bloom filters
-- Phrase matching, n-grams, prefixes, and fuzzy-word features
-- Custom binary index for fast loading
-- Zero runtime dependencies in JavaScript
-- Prebuilt index files a fraction of the size of the corpus.
+## Install
 
-## Requirements
-
-- Node.js (v14 or later)
-- [yq](https://github.com/mikefarah/yq) (for building indexes at development-time)
-
-## Installation
-
-```sh
-npm i -g smgen-search
-```
-
-## Usage
-
-### 1. Build the index
-
-Scan a directory of Markdown files and write the binary index `search.bin`:
-
-```sh
-smgen-search build-index PAGES_DIR INDEX_FILE
-```
-
-### 2. Search the index
-
-Run a query against the generated index:
-
-```sh
-node search.mjs <search terms>
-```
-
-### 3. Example usage
+Install the command globally:
 
 ```bash
-smgen build-index path/to/markdown/files
-smgen search "Hello, world!"
-```
-```plain
-5.357 michael-yin.wagtail-whoosh
-3.299 springload.wagtailembedder
-3.250 treasure-data.pandas-td
-2.904 luckydonald.pytgbot
-2.904 nathancatania.ryurest
-2.857 harrislapiroff.wagtail-foliage
-2.799 astronouth7303.gpotato
-2.786 xtream1101.cutil
+npm install --global smgen-search
 ```
 
-### 4. Browser (web) usage
+To pin it inside a site, install it as a development dependency:
 
-You can also perform searches directly in a web page by serving the generated `search.bin` as a static asset.
-Include `SearchReader.mjs` as an ES module (directly or via your bundler), then load and query the index:
-
-```html
-<script type="module">
-  import { SearchReader } from './SearchReader.mjs';
-
-  async function initSearch() {
-    // Fetch the binary index from your static asset server
-    const resp = await fetch('/search.bin');
-    const buffer = await resp.arrayBuffer();
-    const reader = new SearchReader(buffer);
-
-    // Perform a search (threshold parameter is optional)
-    const results = reader.search('your search terms here', 0.00);
-    // Output top 10 results
-    console.log(results.slice(0, 10));
-  }
-
-  initSearch().catch(console.error);
-</script>
+```bash
+npm install --save-dev smgen-search
+npx smgen-search --help
 ```
 
-## Commands
+## Build an Index
 
-### `smgen-search build-index`
+Pass the Markdown directory and output file:
 
-*alias smgen bi*
-
-Build the search index and store it in a file.
-
-```sh
-smgen-search build-index PAGES_DIR INDEX_FILE
+```bash
+smgen-search build-index ./pages ./static/search.bin
 ```
 
-* `PAGES_DIR` - Directory to scan for pages.
-* `INDEX_FILE` - File to store the index.
+The builder reads `.md` files recursively. It ignores hidden files, symbolic
+links, and other file types. YAML frontmatter can set `title` or exclude a page:
 
-`PAGES_DIR` & `INDEX_FILE` can be ALSO be provided as environment variables:
-
-### `smgen-search search`
-
-*alias smgen s*
-
-Search the index and return the results.
-
-```sh
-smgen-search search "search terms..."
+```yaml
+---
+title: Internal Notes
+noSearch: true
+---
 ```
 
+A `.fm.yaml` file applies its values to Markdown files below that directory.
+Page frontmatter overrides inherited values.
 
-`INDEX_FILE` can be ALSO be provided as an environment variable here:
+## Query an Index
 
-### Environment variables
+Set the index path and pass the query after `search`:
 
-The following environment variables can be used to configure the program in CLI mode:
+```bash
+INDEX_FILE=./static/search.bin smgen-search search "menu configuration"
+```
 
-- `INDEX_FILE`: path to index file (default search.bin)
-- `PAGES_DIR`: directory to scan for pages
-- `BLOOM_ERROR_RATE`: desired false-positive rate for Bloom filters (default: 0.08)
-- `MIN_NGRAMS`: minimum n-gram word length to index (default: 2)
-- `MAX_NGRAMS`: maximum n-gram word length to index (default: 3)
-- `MIN_PREFIX`: minimum prefix char length to index (default: 3)
-- `MAX_PREFIX`: maximum prefix char length to index (default: 5)
+Each result contains its score and Markdown path without the `.md` extension:
 
-## Binary format
+```text
+3.500 configuration
+1.833 navigation/menus
+```
 
-The custom binary index format consists of:
+## Use the Browser Reader
 
-- File header (4 bytes): ASCII `SRCH`
-- Four 4-byte little-endian integers, in order:
-  - `MIN_NGRAMS`
-  - `MAX_NGRAMS`
-  - `MIN_PREFIX`
-  - `MAX_PREFIX`
-- One or more document chunks, each:
-  - 4 bytes: chunk header ASCII `SCHK`
-  - 4 bytes (LE): title length, followed by the title UTF-8 bytes
-  - 4 bytes (LE): path length, followed by the path UTF-8 bytes (no `.md`)
-  - 4 bytes (LE): filter length, followed by the raw Bloom filter bits
-- File trailer (4 bytes): ASCII `HCRS`
+Import `SearchReader` from the package or copy the reader modules into the
+site's static assets:
+
+```js
+import { SearchReader } from 'smgen-search';
+
+const response = await fetch('/search.bin');
+const reader = new SearchReader(await response.arrayBuffer());
+const results = reader.search('menu configuration');
+
+for(const [document, score] of results)
+{
+	console.log(score, document.title, document.path);
+}
+```
+
+The package also exports `BloomReader`, `BloomWriter`, and the text feature
+helpers. Browser code can import the reader directly from
+`smgen-search/reader`.
+
+## Configure the Builder
+
+The command accepts these environment variables:
+
+- `PAGES_DIR`: input directory when `build-index` omits it.
+- `INDEX_FILE`: output or query path. Default: `./search.bin`.
+- `YQ`: yq executable. Default: `yq`.
+- `BLOOM_ERROR_RATE`: Bloom filter false-positive rate. Default: `0.08`.
+- `MIN_NGRAMS`: shortest indexed phrase in words. Default: `2`.
+- `MAX_NGRAMS`: longest indexed phrase in words. Default: `3`.
+- `MIN_PREFIX`: shortest indexed prefix in characters. Default: `3`.
+- `MAX_PREFIX`: longest indexed prefix in characters. Default: `5`.
+
+The minimum value cannot exceed its matching maximum. Invalid numeric settings
+stop the build with a nonzero status.
+
+## Binary Format
+
+An index starts with `SRCH`, followed by four little-endian 32-bit integers:
+`MIN_NGRAMS`, `MAX_NGRAMS`, `MIN_PREFIX`, and `MAX_PREFIX`.
+
+Each document chunk contains:
+
+1. `SCHK`
+2. the title byte length and UTF-8 title
+3. the path byte length and UTF-8 path
+4. the Bloom filter byte length and binary filter
+
+The file ends with `HCRS`. SearchReader validates the header, settings, chunk
+boundaries, and trailer before it accepts an index.
 
 ## Development
 
-- Contributions and improvements are welcome
+Run the regression suite and inspect the npm archive:
+
+```bash
+npm test
+npm pack --dry-run
+```
