@@ -179,6 +179,7 @@ test('the packed package installs its public modules and executable', () => {
 	], {
 		cwd: projectDirectory,
 		encoding: 'utf8',
+		env: { ...process.env, npm_config_dry_run: 'false' },
 	});
 	assert.equal(packed.status, 0, packed.stderr);
 	const archive = path.join(directory, packed.stdout.trim().split(/\r?\n/u).at(-1));
@@ -195,6 +196,7 @@ test('the packed package installs its public modules and executable', () => {
 	], {
 		cwd: consumer,
 		encoding: 'utf8',
+		env: { ...process.env, npm_config_dry_run: 'false' },
 	});
 	assert.equal(installed.status, 0, installed.stderr);
 
