@@ -50,6 +50,10 @@ for(const line of source.split(/\\r?\\n/u))
   metadata[match[1]] = match[2] === 'true' ? true : match[2] === 'false' ? false : match[2];
 }
 process.stdout.write(JSON.stringify(metadata));
+if(source.trimEnd().endsWith('---') && !process.argv.includes('select(di == 0)'))
+{
+  process.stdout.write('\\nnull\\n');
+}
 `);
 	fs.chmodSync(executable, 0o755);
 	return executable;
@@ -111,7 +115,7 @@ test('buildIndex applies directory metadata and page overrides', () => {
 	const pages = path.join(directory, 'pages');
 	const output = path.join(directory, 'search.bin');
 	fs.mkdirSync(pages);
-	fs.writeFileSync(path.join(pages, '.fm.yaml'), 'title: Inherited Title\n');
+	fs.writeFileSync(path.join(pages, '.fm.yaml'), '---\ntitle: Inherited Title\n---\n');
 	fs.writeFileSync(path.join(pages, 'inherited.md'), '# Ignored Heading\n\nInherited body.\n');
 	fs.writeFileSync(path.join(pages, 'override.md'), '---\ntitle: Page Title\n---\n# Body Heading\n');
 	fs.writeFileSync(path.join(pages, 'private.md'), '---\nnoSearch: true\n---\n# Private\n');

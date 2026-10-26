@@ -61,8 +61,8 @@ export function readSettings(environment = process.env) {
  */
 function readYaml(filename, yq, frontmatter) {
 	const args = frontmatter
-		? ['--front-matter=extract', '-o=json', filename]
-		: ['-o=json', '.', filename];
+		? ['--front-matter=extract', '-o=json', 'select(di == 0)', filename]
+		: ['-o=json', 'select(di == 0)', filename];
 	const json = execFileSync(yq, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
 	const value = JSON.parse(json || '{}');
 	return value && typeof value === 'object' && !Array.isArray(value) ? value : {};
