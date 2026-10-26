@@ -23,7 +23,7 @@
     "node": ">=20"
   },
   "bin": {
-    "smgen-search": "./index.mjs"
+    "smgen-search": "index.mjs"
   },
   "exports": {
     ".": "./search.mjs",

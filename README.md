@@ -120,3 +120,20 @@ Run the regression suite and inspect the npm archive:
 npm test
 npm pack --dry-run
 ```
+
+### Publish a Release
+
+Set the version in `package.json` and `package-lock.json`, commit it, then push
+the matching stable tag:
+
+```bash
+VERSION="$(node -p "require('./package.json').version")"
+git tag "v${VERSION}"
+git push origin "v${VERSION}"
+```
+
+The `publish.yml` workflow accepts tags in the `v0.0.0` form. It rejects a tag
+that differs from the package version, runs the package checks, inspects the
+archive, and publishes it to npm with provenance. Configure npm trusted
+publishing for `seanmorris/smgen-search` and `publish.yml`, with `npm publish`
+allowed, before pushing the tag.
